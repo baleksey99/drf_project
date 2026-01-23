@@ -11,7 +11,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     """
     API для курсов.
     """
-    queryset = Course.objects.all()
+    queryset = Course.objects.prefetch_related('lessons')
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
