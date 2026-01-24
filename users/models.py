@@ -23,7 +23,6 @@ class User(AbstractUser):
         related_query_name='user',
     )
 
-
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [
         ('cash', 'Наличные'),
@@ -71,54 +70,9 @@ class Payment(models.Model):
         verbose_name = 'Платёж'
         verbose_name_plural = 'Платежи'
 
-class Course(models.Model):
-    name = models.CharField(
-        max_length=200,
-        verbose_name='Название курса'
-    )
-    description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Описание курса'
-    )
-    # Можно добавить другие поля, например:
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата создания'
-    )
+class CustomUser(AbstractUser):
+    phone = models.CharField(max_length=15, blank=True, null=True)
+    birth_date = models.DateField(blank=True, null=True)
 
     def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Курс'
-        verbose_name_plural = 'Курсы'
-
-class Lesson(models.Model):
-    name = models.CharField(
-        max_length=200,
-        verbose_name='Название урока'
-    )
-    course = models.ForeignKey(
-        Course,
-        on_delete=models.CASCADE,
-        related_name='lessons',
-        verbose_name='Курс'
-    )
-    content = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Содержание урока'
-    )
-    order = models.PositiveIntegerField(
-        default=1,
-        verbose_name='Порядок в курсе'
-    )
-
-    def __str__(self):
-        return f"{self.name} ({self.course.name})"
-
-    class Meta:
-        verbose_name = 'Урок'
-        verbose_name_plural = 'Уроки'
-        ordering = ['order']
+        return self.username
