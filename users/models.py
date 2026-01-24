@@ -1,27 +1,42 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-class User(AbstractUser):
-    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True, verbose_name='Город')
 
-    # Переопределяем поля groups и user_permissions с уникальными related_name
-    groups = models.ManyToManyField(
-        'auth.Group',
-        verbose_name='groups',
+
+class User(AbstractUser):
+    # Дополнительные поля пользователя
+    avatar = models.ImageField(
+        upload_to='avatars/',
         blank=True,
-        help_text='The groups this user belongs to.',
-        related_name='custom_user_set',
-        related_query_name='user',
+        null=True,
+        verbose_name='Аватар'
     )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        verbose_name='user permissions',
+    city = models.CharField(
+        max_length=100,
         blank=True,
-        help_text='Specific permissions for this user.',
-        related_name='custom_user_set',
-        related_query_name='user',
+        null=True,
+        verbose_name='Город'
     )
+    phone = models.CharField(
+        max_length=15,
+        blank=True,
+        null=True,
+        verbose_name='Телефон'
+    )
+    birth_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата рождения'
+    )
+
+    def __str__(self):
+        return self.get_full_name() or self.username
+
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+
 
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [
@@ -39,14 +54,14 @@ class Payment(models.Model):
         verbose_name='Дата оплаты'
     )
     course = models.ForeignKey(
-        'materials.Course',  # Ссылка на модель Course из приложения materials
+        'materials.Course',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         verbose_name='Оплаченный курс'
     )
     lesson = models.ForeignKey(
-        'materials.Lesson',  # Ссылка на модель Lesson из приложения materials
+        'materials.Lesson',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -69,10 +84,3 @@ class Payment(models.Model):
     class Meta:
         verbose_name = 'Платёж'
         verbose_name_plural = 'Платежи'
-
-class CustomUser(AbstractUser):
-    phone = models.CharField(max_length=15, blank=True, null=True)
-    birth_date = models.DateField(blank=True, null=True)
-
-    def __str__(self):
-        return self.username
