@@ -28,7 +28,7 @@ Thumbs.db
 
 
 # Environment
-.env
+.env/
 
 # Django
 *.log
