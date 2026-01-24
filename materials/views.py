@@ -1,50 +1,22 @@
-from rest_framework import viewsets, permissions
-from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView
-from .models import Lesson, Course
-from .serializers import LessonSerializer, CourseSerializer
-
-from . import views
+from rest_framework import generics
+from .models import Course, Lesson
+from .serializers import CourseSerializer, LessonSerializer
 
 
 
-class CourseViewSet(viewsets.ModelViewSet):
-    """
-    API для курсов.
-    """
-    queryset = Course.objects.prefetch_related('lessons')
+class CourseList(generics.ListCreateAPIView):
+    queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
+class CourseDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
 
 
-
-class LessonViewSet(viewsets.ModelViewSet):
-    """
-    API для уроков.
-    """
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-
-class LessonList(ListAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class LessonDetail(RetrieveAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class LessonCreate(CreateAPIView):
+class LessonList(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
 
-class LessonUpdate(UpdateAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-
-class LessonDelete(DestroyAPIView):
+class LessonDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer

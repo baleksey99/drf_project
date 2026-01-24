@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Lesson
+from materials.models import Course, Lesson
 from users.models import Payment
 
 

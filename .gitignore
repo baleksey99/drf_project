@@ -25,3 +25,13 @@ env/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+
+# Environment
+.env
+
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
