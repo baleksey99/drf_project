@@ -7,7 +7,7 @@ class PaymentFilter(filters.FilterSet):
     method = filters.ChoiceFilter(choices=Payment.PAYMENT_METHOD_CHOICES)
     payment_date = filters.DateTimeFilter()
 
-    # Сортировка по дате оплаты
+
     ordering = filters.OrderingFilter(
         fields=(
             ('payment_date', 'payment_date'),
