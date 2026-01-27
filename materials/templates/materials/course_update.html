@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+
+{% block title %}Редактировать курс — Мой сайт{% endblock %}
+
+
+{% block content %}
+    <h1>Редактировать курс</h1>
+
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="id_name" class="form-label">Название</label>
+            {{ form.name }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_description" class="form-label">Описание</label>
+            {{ form.description }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_preview" class="form-label">Превью</label>
+            {{ form.preview }}
+            {% if form.preview.value %}
+                <p class="text-muted">Текущее изображение:</p>
+                <img src="{{ form.preview.value.url }}" alt="Превью" class="img-thumbnail" style="max-height: 150px;">
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a href="{% url 'course_detail' course.id %}" class="btn btn-secondary">Отмена</a>
+    </form>
+{% endblock %}
