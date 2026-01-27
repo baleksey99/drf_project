@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+
+{% block title %}{{ course.name }} — Мой сайт{% endblock %}
+
+
+{% block content %}
+    <h1>{{ course.name }}</h1>
+
+    {% if course.preview %}
+        <img src="{{ course.preview.url }}" alt="Превью" class="img-thumbnail mb-3" style="max-height: 200px;">
+    {% endif %}
+
+
+    <p><strong>Описание:</strong> {{ course.description|linebreaks }}</p>
+    <p><strong>Автор:</strong> {{ course.author.username }}</p>
+
+
+
+    <h3>Уроки:</h3>
+    <ul class="list-group">
+        {% for lesson in course.lessons.all %}
+            <li class="list-group-item">
+                <a href="{% url 'lesson_detail' lesson.id %}">{{ lesson.name }}</a>
+                {% if lesson.preview %}
+                    <img src="{{ lesson.preview.url }}" alt="Превью урока" class="img-thumbnail float-end" style="max-width: 100px;">
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+
+    <div class="mt-4">
+        {% if course.author == user or user.groups.all|join:","|contains:"Модераторы! %}
+            <a href="{% url 'course_update' course.id %}" class="btn btn-primary">Редактировать</a>
+            <a href="{% url 'course_delete' course.id %}"
+               onclick="return confirm('Удалить курс? Все уроки будут удалены!')"
+               class="btn btn-danger">Удалить</a>
+        {% endif %}
+        <a href="{% url 'course_list' %}" class="btn btn-secondary">Назад к списку</a>
+    </div>
+{% endblock %}

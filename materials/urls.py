@@ -14,4 +14,8 @@ urlpatterns = [
     path('courses/<int:pk>/', views.CourseDetail.as_view(), name='course-detail'),
     path('lessons/', views.LessonList.as_view(), name='lesson-list'),
     path('lessons/<int:pk>/', views.LessonDetail.as_view(), name='lesson-detail'),
+    path('course/<int:pk>/', views.CourseDetailView.as_view(), name='course_detail'),
+    path('course/<int:pk>/edit/', views.CourseUpdateView.as_view(), name='course_update'),
+    path('course/<int:pk>/delete/', views.CourseDeleteView.as_view(), name='course_delete'),
+    path('courses/', views.CourseListView.as_view(), name='course_list'),
 ]
