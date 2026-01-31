@@ -3,11 +3,12 @@ from django_filters import rest_framework as filters
 from .filters import CourseFilter
 from .permissions import IsOwnerOrModerator
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action
 from .paginators import StandardResultsSetPagination
 from .models import Course, Subscription, Lesson
 from .serializers import CourseSerializer, SubscriptionSerializer, LessonSerializer
-from rest_framework.exceptions import NotFound, PermissionDenied
+
+
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
@@ -27,6 +28,38 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    @action(detail=True, methods=['post'], url_path='subscribe')
+    def subscribe(self, request, pk=None):
+        """Подписка на курс."""
+        course = self.get_object()
+        subscription, created = Subscription.objects.get_or_create(
+            user=request.user,
+            course=course
+        )
+        if created:
+            serializer = SubscriptionSerializer(subscription)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Вы уже подписаны'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], url_path='unsubscribe')
+    def unsubscribe(self, request, pk=None):
+        """Отмена подписки на курс."""
+        course = self.get_object()
+        try:
+            subscription = Subscription.objects.get(user=request.user, course=course)
+            subscription.delete()
+            return Response(
+                {'message': 'Подписка отменена'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except Subscription.DoesNotExist:
+            return Response(
+                {'error': 'Подписка не найдена'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+
 class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
@@ -42,34 +75,3 @@ class LessonViewSet(viewsets.ModelViewSet):
         if course.author != self.request.user:
             raise PermissionDenied("Вы не можете создавать уроки для чужого курса")
         serializer.save(author=self.request.user)
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def subscribe(request, course_id):
-    try:
-        course = Course.objects.get(id=course_id)
-    except Course.DoesNotExist:
-        raise NotFound('Курс не найден')
-
-    if Subscription.objects.filter(user=request.user, course=course).exists():
-        return Response(
-            {'message': 'Вы уже подписаны на этот курс'},
-            status=status.HTTP_200_OK
-        )
-
-    subscription = Subscription.objects.create(user=request.user, course=course)
-    serializer = SubscriptionSerializer(subscription)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-@api_view(['DELETE'])
-@permission_classes([permissions.IsAuthenticated])
-def unsubscribe(request, course_id):
-    try:
-        subscription = Subscription.objects.get(user=request.user, course_id=course_id)
-        subscription.delete()
-        return Response(
-            {'message': 'Подписка отменена'},
-            status=status.HTTP_204_NO_CONTENT
-        )
-    except Subscription.DoesNotExist:
-        raise NotFound('Подписка не найдена')
