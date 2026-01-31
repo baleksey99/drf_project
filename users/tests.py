@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APITestCase
 from materials.models import Course, Lesson
-from .serializers import CourseSerializer, LessonSerializer
+from materials.serializers import CourseSerializer, LessonSerializer
 
 
 class CourseModelTest(TestCase):

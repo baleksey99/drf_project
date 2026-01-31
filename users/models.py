@@ -1,10 +1,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from materials.models import Course
 
 
 
 class User(AbstractUser):
-    # Дополнительные поля пользователя
+
     avatar = models.ImageField(
         upload_to='avatars/',
         blank=True,
