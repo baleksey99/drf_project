@@ -1,10 +1,12 @@
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import login
+from django.shortcuts import get_object_or_404
+from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+from .permissions import IsOwnerOrModerator, IsModerator
+from .models import User
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -23,53 +25,36 @@ def register(request):
 @permission_classes([permissions.AllowAny])
 def login_view(request):
     serializer = LoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         user = serializer.validate(serializer.data)
-        login(request, user)
+        if not user.is_active:
+            return Response({'error': 'Пользователь неактивен'}, status=status.HTTP_403_FORBIDDEN)
+
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         })
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+    except Exception:
+        return Response({'error': 'Неверные учётные данные'}, status=status.HTTP_401_UNAUTHORIZED)
 
-class UserListView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsOwnerOrModerator]
 
+    def get_permissions(self):
+        # Регистрация и список — без авторизации
+        if self.action in ['create', 'list']:
+            return [permissions.AllowAny()]
+        # Остальные действия — проверка владельца или модератора
+        return [IsOwnerOrModerator()]
 
-    def get(self, request):
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
-
-class UserDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            serializer = UserSerializer(user)
-            return Response(serializer.data)
-        except User.DoesNotExist:
-            return Response({'error': 'Пользователь не найден'}, status=status.HTTP_404_NOT_FOUND)
-
-
-    def put(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({'error': 'Пользователь не найден'}, status=status.HTTP_404_NOT_FOUND)
-
-    def delete(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            user.delete()
-            return Response({'message': 'Пользователь удалён'}, status=status.HTTP_204_NO_CONTENT)
-        except User.DoesNotExist:
-            return Response({'error': 'Пользователь не найден'}, status=status.HTTP_404_NOT_FOUND)
+    def get_queryset(self):
+        # Модераторы видят всех, обычные пользователи — только себя
+        if self.request.user.groups.filter(name='moderators').exists():
+            return User.objects.all()
+        return User.objects.filter(id=self.request.user.id)
