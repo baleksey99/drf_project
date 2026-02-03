@@ -1,42 +1,65 @@
 import os
-from decouple import config
 from pathlib import Path
 from datetime import timedelta
+import environ  # Используем только environ (не decouple + dotenv)
 
 
+# Отладка: проверяем путь и содержимое .env
 BASE_DIR = Path(__file__).resolve().parent.parent
+env_path = BASE_DIR / '.env'
 
-SECRET_KEY = config('SECRET_KEY')
+
+print("=== ОТЛАДКА .env ===")
+print("Корень проекта:", BASE_DIR)
+print(".env существует:", env_path.exists())
+if env_path.exists():
+    print("Содержимое .env:")
+    with open(env_path, 'r', encoding='utf-8') as f:
+        print(f.read())
+else:
+    print(".env НЕ найден!")
 
 
-DEBUG = config('DEBUG', default=False, cast=bool)
+# Инициализация environ
+env = environ.Env()
+env.read_env(str(BASE_DIR / '.env')) # Загружаем .env
 
+print("SECRET_KEY загружен:", 'SECRET_KEY' in env)
+print("=" * 30)
+# Инициализация environ
+env = environ.Env(
+    SECRET_KEY=str,  # Явно указываем тип
+    DEBUG=bool,
+    # Другие переменные по необходимости
+)
+
+env.read_env(str(BASE_DIR / '.env'))  # Читаем .env
+
+
+SECRET_KEY = env('SECRET_KEY')  # Теперь работает!
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-
 ]
 
-
+# БД
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
 
-
+# Тестирование
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
-
-
-
-
+# Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -50,8 +73,10 @@ INSTALLED_APPS = [
     'users',
     'materials',
     'drf_yasg',
+    'django_celery_beat',
 ]
 
+# Swagger
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {
@@ -63,7 +88,7 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
 }
 
-
+# DRF
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -73,7 +98,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-
+# JWT
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -81,7 +106,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
-
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -92,9 +117,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-
+# URLs и шаблоны
 ROOT_URLCONF = 'config.urls'
-
 
 TEMPLATES = [
     {
@@ -112,10 +136,9 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
+# Валидация паролей
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -134,13 +157,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+# Локализация
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
+# Статика и медиа
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
@@ -150,10 +173,10 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
+# Пользовательская модель
 AUTH_USER_MODEL = 'users.User'
 
-
+# Логирование
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -165,17 +188,26 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': config('DJANGO_LOG_LEVEL', default='INFO'),
+            'level': env('DJANGO_LOG_LEVEL', default='INFO'),
         },
     },
 }
 
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-]
+# Stripe
+STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY')
 
 
-STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+# Redis и Celery
+REDIS_HOST = env('REDIS_HOST', default='localhost')
+REDIS_PORT = env.int('REDIS_PORT', default=6379)
+REDIS_DB = env.int('REDIS_DB', default=0)
+
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+CELERY_REDIS_MAX_CONNECTIONS = 10
+CELERY_TASK_RESULT_EXPIRES = 3600
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 

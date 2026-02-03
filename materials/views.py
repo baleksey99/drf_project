@@ -1,64 +1,44 @@
-from rest_framework import generics, viewsets, status, permissions
-from django_filters import rest_framework as filters
-from .filters import CourseFilter
-from .permissions import IsOwnerOrModerator
-from rest_framework.response import Response
+# views.py
+import stripe
+from django.shortcuts import get_object_or_404
+from django.conf import settings
 from rest_framework.decorators import action
-from .paginators import StandardResultsSetPagination
-from .models import Course, Subscription, Lesson
-from .serializers import CourseSerializer, SubscriptionSerializer, LessonSerializer
-
-
+from rest_framework.response import Response
+from .models import Course
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    filter_backends = [filters.DjangoFilterBackend]
-    filterset_class = CourseFilter
-    pagination_class = StandardResultsSetPagination
+    # ... остальные методы (как в вашем коде) ...
 
-    def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
-            return [IsOwnerOrModerator()]
-        elif self.action == 'create':
-            return [permissions.IsAuthenticated()]
-        else:
-            return [permissions.AllowAny()]
+    @action(detail=True, methods=['post'], url_path='create-payment-session')
+    def create_payment_session(self, request, pk=None):
+        """
+        Создаёт сессию Stripe Checkout для оплаты курса.
+        """
+        course = get_object_or_404(Course, pk=pk)
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-    @action(detail=True, methods=['post'], url_path='subscribe')
-    def subscribe(self, request, pk=None):
-        """Подписка на курс."""
-        course = self.get_object()
-        subscription, created = Subscription.objects.get_or_create(
-            user=request.user,
-            course=course
-        )
-        if created:
-            serializer = SubscriptionSerializer(subscription)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({'message': 'Вы уже подписаны'}, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['delete'], url_path='unsubscribe')
-    def unsubscribe(self, request, pk=None):
-        """Отмена подписки на курс."""
-        course = self.get_object()
         try:
-            subscription = Subscription.objects.get(user=request.user, course=course)
-            subscription.delete()
-            return Response(
-                {'message': 'Подписка отменена'},
-                status=status.HTTP_204_NO_CONTENT
-            )
-        except Subscription.DoesNotExist:
-            return Response(
-                {'error': 'Подписка не найдена'},
-                status=status.HTTP_404_NOT_FOUND
+            # Создаём сессию Stripe
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[
+                    {
+                        'price': course.stripe_price_id,
+                        'quantity': 1,
+                    },
+                ],
+                mode='payment',
+                success_url=request.build_absolute_uri('/success/'),
+                cancel_url=request.build_absolute_uri('/cancel/'),
             )
 
-
+            return Response({
+                'session_id': checkout_session.id,
+                'public_key': settings.STRIPE_PUBLISHABLE_KEY
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
 
 class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
