@@ -9,6 +9,7 @@ class CreateProductView(View):
     API-эндпоинт для создания продукта и цены в Stripe.
     Пример запроса: POST /api/create-product/
     """
+<<<<<<< HEAD
 
     def post(self, request):
         try:
@@ -22,6 +23,25 @@ class CreateProductView(View):
             price = create_price(
                 product_id=product.id,
                 unit_amount=10000,  # $100.00
+=======
+    def post(self, request):
+        try:
+           
+            course_id = request.POST.get('course_id') 
+
+            # 2. Получаем объект курса из БД
+            course = Course.objects.get(id=course_id)
+
+            product = create_product(
+                name=course.name, 
+                description=course.description  
+            )
+
+            
+            price = create_price(
+                product_id=product.id,
+                unit_amount=10000,  # $100.00 (можно также сделать динамическим)
+>>>>>>> 4aa57d4b33958df394a638c916e2f61778f6d1c9
                 currency='usd'
             )
 
@@ -30,10 +50,19 @@ class CreateProductView(View):
                 'price_id': price.id,
                 'message': 'Продукт и цена созданы'
             })
+<<<<<<< HEAD
+=======
+        except Course.DoesNotExist:
+            return JsonResponse({'error': 'Курс не найден'}, status=404)
+>>>>>>> 4aa57d4b33958df394a638c916e2f61778f6d1c9
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4aa57d4b33958df394a638c916e2f61778f6d1c9
 class CheckoutView(View):
     """
     Отображает кнопку для перехода на страницу оплаты Stripe.

@@ -1,10 +1,6 @@
 from .models import Course, Lesson, Subscription
 from .validators import YouTubeLinkValidator
 from rest_framework import serializers
-from rest_framework import serializers
-from .models import Course
-from .tasks import send_course_update_email
-from django.utils import timezone
 
 
 class LessonShortSerializer(serializers.ModelSerializer):
@@ -73,17 +69,3 @@ class LessonSerializer(serializers.ModelSerializer):
         if video_url and video_url.strip():
             validate_youtube_link(video_url)
         return data
-
-
-
-class CourseSerializer(serializers.ModelSerializer):
-    def update(self, instance, validated_data):
-        # Проверяем, не обновлялся ли курс за последние 4 часа
-        four_hours_ago = timezone.now() - timezone.timedelta(hours=4)
-        if instance.updated_at < four_hours_ago:
-            # Обновляем поле updated_at
-            instance.updated_at = timezone.now()
-            # Запускаем задачу на отправку писем
-            send_course_update_email.delay(instance.id)
-
-        return super().update(instance, validated_data)
