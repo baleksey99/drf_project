@@ -176,6 +176,42 @@ STATICFILES_FINDERS = [
 ]
 
 
-STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='test_key')
 
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='test_secret_key')
+
+SECRET_KEY = config('SECRET_KEY')
+
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+REDIS_DB = os.getenv('REDIS_DB', '0')
+
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+
+CELERY_RESULT_EXPIRES = 3600
+
+
+CELERY_TASK_TIME_LIMIT = 300
+
+
+CELERY_TIMEZONE = 'UTC'
+
+CELERY_BEAT_SCHEDULE = {
+    'check-inactive-users': {
+        'task': 'accounts.tasks.check_inactive_users',
+        'schedule': timedelta(days=1),  # раз в день
+        'args': (),
+    },
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'check-inactive-users': {
+        'task': 'accounts.tasks.check_inactive_users',
+        'schedule': timedelta(days=1),
+        'args': (),
+    },
+}
