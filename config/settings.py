@@ -176,7 +176,7 @@ STATICFILES_FINDERS = [
 ]
 
 
-<<<<<<< HEAD
+
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='test_key')
 
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='test_secret_key')
@@ -215,9 +215,15 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(days=1),
         'args': (),
     },
+    'block-inactive-users': {
+        'task': 'users.tasks.block_inactive_users',
+        'schedule': timedelta(hours=1),
+        'args': (),
+    },
 }
-=======
+
+
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
 
->>>>>>> 4aa57d4b33958df394a638c916e2f61778f6d1c9
+

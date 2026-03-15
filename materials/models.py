@@ -12,6 +12,14 @@ class Course(models.Model):
         related_name='courses'
     )
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Вызываем задачу Celery после сохранения
+        send_course_update_email.delay(self.id)
+
+    def __str__(self):
+        return self.name
+
     def __str__(self):
         return self.name
 
