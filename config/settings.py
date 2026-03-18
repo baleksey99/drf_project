@@ -201,29 +201,17 @@ CELERY_TASK_TIME_LIMIT = 300
 
 CELERY_TIMEZONE = 'UTC'
 
-CELERY_BEAT_SCHEDULE = {
-    'check-inactive-users': {
-        'task': 'accounts.tasks.check_inactive_users',
-        'schedule': timedelta(days=1),  # раз в день
-        'args': (),
-    },
-}
 
-CELERY_BEAT_SCHEDULE = {
-    'check-inactive-users': {
-        'task': 'accounts.tasks.check_inactive_users',
-        'schedule': timedelta(days=1),
-        'args': (),
-    },
-    'block-inactive-users': {
-        'task': 'users.tasks.block_inactive_users',
-        'schedule': timedelta(hours=1),
-        'args': (),
-    },
-}
+CELERY_BEAT_SCHEDULE = {}
+
 
 
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
 
-
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'from@example.com'
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')

@@ -1,29 +1,23 @@
 from celery import shared_task
 from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from .models import Course, Subscription
+from .models import Course
 
 
 @shared_task
-def send_course_update_email(course_id):
+def send_course_update_notification(course_id):
     try:
         course = Course.objects.get(id=course_id)
-        subscriptions = Subscription.objects.filter(course=course, is_active=True)
-
-        for subscription in subscriptions:
-            context = {
-                'user': subscription.user,
-                'course': course,
-            }
-            subject = f'Обновление курса: {course.title}'
-            message = render_to_string('emails/course_update.txt', context)
-
-            send_mail(
-                subject,
-                message,
-                'noreply@example.com',
-                [subscription.user.email],
-                fail_silently=False,
-            )
+        subject = f'Обновление курса: {course.name}'
+        message = f'Курс "{course.name}" был обновлён. Заходите и изучайте новые материалы!'
+        send_mail(
+            subject,
+            message,
+            'from@example.com',
+            [course.author.email],
+            fail_silently=False,
+        )
+        return f'Уведомление об обновлении курса "{course.name}" отправлено.'
     except Course.DoesNotExist:
-        pass
+        return 'Курс не найден.'
+    except Exception as e:
+        return f'Ошибка при отправке уведомления: {str(e)}'
