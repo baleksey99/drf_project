@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from .paginators import StandardResultsSetPagination
 from .models import Course, Subscription, Lesson
 from .serializers import CourseSerializer, SubscriptionSerializer, LessonSerializer
-
+from materials.tasks import send_course_update_notification
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -27,6 +27,28 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Отправляем уведомление после обновления курса
+        send_course_update_notification.delay(instance.id)
+
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Отправляем уведомление после частичного обновления курса
+        send_course_update_notification.delay(instance.id)
+
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'], url_path='subscribe')
     def subscribe(self, request, pk=None):
@@ -57,21 +79,3 @@ class CourseViewSet(viewsets.ModelViewSet):
                 {'error': 'Подписка не найдена'},
                 status=status.HTTP_404_NOT_FOUND
             )
-
-
-
-class LessonViewSet(viewsets.ModelViewSet):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-    pagination_class = StandardResultsSetPagination
-
-    def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
-            return [IsOwnerOrModerator()]
-        return [permissions.IsAuthenticated()]
-
-    def perform_create(self, serializer):
-        course = serializer.validated_data['course']
-        if course.author != self.request.user:
-            raise PermissionDenied("Вы не можете создавать уроки для чужого курса")
-        serializer.save(author=self.request.user)

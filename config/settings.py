@@ -202,7 +202,14 @@ CELERY_TASK_TIME_LIMIT = 300
 CELERY_TIMEZONE = 'UTC'
 
 
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    'block-inactive-users': {
+        'task': 'users.tasks.block_inactive_users',
+        'schedule': timedelta(hours=1),
+        'args': (),
+    },
+}
+
 
 
 

@@ -7,6 +7,10 @@ from django.shortcuts import get_object_or_404
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 from .permissions import IsOwnerOrModerator, IsModerator
 from .models import User
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from materials.tasks import send_course_update_notification  # Импортируем задачу Celery
+from materials.models import Course
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -58,3 +62,18 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.request.user.groups.filter(name='moderators').exists():
             return User.objects.all()
         return User.objects.filter(id=self.request.user.id)
+
+@api_view(['PUT'])
+def update_course(request, course_id):
+    try:
+        course = Course.objects.get(id=course_id)
+        course.save()
+
+        # Отправляем уведомление после обновления курса
+        send_course_update_notification.delay(course_id)
+
+        return JsonResponse({'status': 'updated'}, status=200)
+    except Course.DoesNotExist:
+        return JsonResponse({'error': 'Курс не найден'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
