@@ -214,7 +214,7 @@ CELERY_BEAT_SCHEDULE = {
 
 
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
