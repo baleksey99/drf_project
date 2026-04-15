@@ -168,7 +168,7 @@ STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='test_key')
 
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='test_secret_key')
 
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = os.getenv('REDIS_PORT', '6379')
@@ -191,8 +191,7 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
