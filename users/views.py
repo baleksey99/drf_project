@@ -9,7 +9,7 @@ from .permissions import IsOwnerOrModerator, IsModerator
 from .models import User
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
-from materials.tasks import send_course_update_notification  # Импортируем задачу Celery
+from materials.tasks import send_course_update_notification
 from materials.models import Course
 
 @api_view(['POST'])

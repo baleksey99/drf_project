@@ -199,3 +199,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'from@example.com'
 EMAIL_HOST_PASSWORD = ''
+
+if 'test' in sys.argv or 'pytest' in sys.modules:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True

@@ -9,7 +9,6 @@ from .models import Course, Subscription, Lesson
 from .serializers import CourseSerializer, SubscriptionSerializer, LessonSerializer
 from materials.tasks import send_course_update_notification
 
-
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -54,14 +53,21 @@ class CourseViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, pk=None):
         """Подписка на курс."""
         course = self.get_object()
-        subscription, created = Subscription.objects.get_or_create(
+
+        # Проверяем, есть ли уже подписка
+        if Subscription.objects.filter(user=request.user, course=course).exists():
+            return Response(
+                {'error': 'Вы уже подписаны на этот курс'},
+                status=status.HTTP_409_CONFLICT
+            )
+
+        # Создаём новую подписку
+        subscription = Subscription.objects.create(
             user=request.user,
             course=course
         )
-        if created:
-            serializer = SubscriptionSerializer(subscription)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({'message': 'Вы уже подписаны'}, status=status.HTTP_200_OK)
+        serializer = SubscriptionSerializer(subscription)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['delete'], url_path='unsubscribe')
     def unsubscribe(self, request, pk=None):
@@ -79,3 +85,20 @@ class CourseViewSet(viewsets.ModelViewSet):
                 {'error': 'Подписка не найдена'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+class LessonViewSet(viewsets.ModelViewSet):
+    queryset = Lesson.objects.all().order_by('order')
+    serializer_class = LessonSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.DjangoFilterBackend]
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsOwnerOrModerator()]
+        elif self.action == 'create':
+            return [permissions.IsAuthenticated()]
+        else:
+            return [permissions.AllowAny()]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)

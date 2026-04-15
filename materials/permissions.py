@@ -6,7 +6,6 @@ class IsOwnerOrModerator(permissions.BasePermission):
     - GET/HEAD/OPTIONS — всем пользователям (безопасные методы).
     - PUT/PATCH/DELETE — только автору объекта или пользователям из группы «Модераторы».
 
-
     Требования:
     - Объект должен иметь поле `author` (ForeignKey на User).
     - Группа «Модераторы» должна существовать в БД.
@@ -21,7 +20,6 @@ class IsOwnerOrModerator(permissions.BasePermission):
 
         is_owner = obj.author == request.user
         is_moderator = request.user.groups.filter(name='Модераторы').exists()
-
 
         return is_owner or is_moderator
 

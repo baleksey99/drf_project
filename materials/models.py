@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from django.utils import timezone
 
 class Course(models.Model):
     name = models.CharField(max_length=200)
@@ -11,14 +11,8 @@ class Course(models.Model):
         on_delete=models.CASCADE,
         related_name='courses'
     )
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Вызываем задачу Celery после сохранения
-        send_course_update_email.delay(self.id)
-
-    def __str__(self):
-        return self.name
+    created_at = models.DateTimeField(default=timezone.now)  # ← добавлено
+    updated_at = models.DateTimeField(auto_now=True)  # ← добавлено
 
     def __str__(self):
         return self.name
@@ -32,13 +26,12 @@ class Subscription(models.Model):
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
-        related_name='subscribers'  # ← Исправлено: было 'subcribers'
+        related_name='subscribers'  # ← исправлено: было 'subcribers'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('user', 'course')
-        # ← Добавлен индекс для ускорения запросов
         indexes = [
             models.Index(fields=['user', 'course']),
         ]
@@ -51,7 +44,7 @@ class Lesson(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     preview = models.ImageField(upload_to='lesson_previews/', blank=True, null=True)
-    video_url = models.URLField(blank=True, null=True)  # ← blank/null
+    video_url = models.URLField(blank=True, null=True)
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -59,6 +52,7 @@ class Lesson(models.Model):
     )
     order = models.PositiveIntegerField(default=1)
     duration = models.DurationField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # ← добавлено
 
     def __str__(self):
         return self.name
